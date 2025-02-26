@@ -1,0 +1,79 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_CREDENTIALS = credentials('aws-credentials')  // Jenkins AWS Credentials ID
+        TF_WORKDIR = "terraform-aws-infra"
+        TF_VERSION = "1.6.0"
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git 'https://github.com/your-repo/terraform-aws-infra.git'
+            }
+        }
+
+        stage('Install Terraform') {
+            steps {
+                sh """
+                wget https://releases.hashicorp.com/terraform/\$TF_VERSION/terraform_\$TF_VERSION_linux_amd64.zip
+                unzip terraform_\$TF_VERSION_linux_amd64.zip
+                sudo mv terraform /usr/local/bin/
+                terraform version
+                """
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                sh """
+                cd \$TF_WORKDIR
+                terraform init
+                """
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                sh """
+                cd \$TF_WORKDIR
+                terraform plan -var="aws_region=us-east-1" \
+                               -var="key_pair=my-key-pair" \
+                               -var="s3_bucket_name=my-unique-s3-bucket" \
+                               -var="access_key=\$AWS_CREDENTIALS_USR" \
+                               -var="secret_key=\$AWS_CREDENTIALS_PSW"
+                """
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                sh """
+                cd \$TF_WORKDIR
+                terraform apply -auto-approve \
+                                -var="aws_region=us-east-1" \
+                                -var="key_pair=my-key-pair" \
+                                -var="s3_bucket_name=my-unique-s3-bucket" \
+                                -var="access_key=\$AWS_CREDENTIALS_USR" \
+                                -var="secret_key=\$AWS_CREDENTIALS_PSW"
+                """
+            }
+        }
+
+        stage('Terraform Destroy') {
+            when { expression { return params.DESTROY } }
+            steps {
+                sh """
+                cd \$TF_WORKDIR
+                terraform destroy -auto-approve \
+                                  -var="aws_region=us-east-1" \
+                                  -var="key_pair=my-key-pair" \
+                                  -var="s3_bucket_name=my-unique-s3-bucket" \
+                                  -var="access_key=\$AWS_CREDENTIALS_USR" \
+                                  -var="secret_key=\$AWS_CREDENTIALS_PSW"
+                """
+            }
+        }
+    }
+}

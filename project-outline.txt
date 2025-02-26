@@ -1,0 +1,13 @@
+terraform-project/
+│── main.tf                # Calls the module
+│── variables.tf           # Global variables
+│── modules/
+│   ├── s3_lambda_sns/
+│   │   ├── main.tf        # Module logic
+│   │   ├── variables.tf   # Module inputs
+│   │   ├── outputs.tf     # Module outputs
+│   │   ├── iam.tf         # IAM roles & policies
+│   │   ├── s3.tf          # S3 bucket setup
+│   │   ├── lambda.tf      # Lambda function setup
+│   │   ├── sns.tf         # SNS setup
+│── outputs.tf             # Outputs from module
